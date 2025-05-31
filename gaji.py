@@ -1,4 +1,3 @@
-# gaji.py
 import streamlit as st
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -7,6 +6,7 @@ from error_handling import log_exception, show_user_error
 from PIL import Image
 import os
 import re
+import tempfile
 
 def convert_png_to_rgb(input_path, output_path, bg_color=(255, 255, 255)):
     try:
@@ -144,8 +144,11 @@ def create_pdf_reportlab(data, nama_file):
 
         # Bersihkan file konversi sementara
         for f in [logo_rgb_path, signature_rgb_path]:
-            if os.path.exists(f):
-                os.remove(f)
+            try:
+                if os.path.exists(f):
+                    os.remove(f)
+            except Exception as e:
+                log_exception(e, f"Gagal menghapus file sementara {f}")
 
     except Exception as e:
         log_exception(e, "Gagal membuat PDF slip gaji")
@@ -206,6 +209,9 @@ def halaman_gaji():
             total_potongan = pph21 + bpjs_kesehatan + bpjs_ketenagakerjaan + tagihan_hutang1 + tagihan_hutang2
             pembayaran = total_penghasilan - total_potongan
 
+            if pembayaran < 0:
+                st.warning("⚠️ Total potongan lebih besar dari penghasilan!")
+
             if st.button("Cetak Slip Gaji"):
                 try:
                     data = {
@@ -218,7 +224,7 @@ def halaman_gaji():
                             "Jabatan": jabatan
                         },
                         "data_bank": {
-                            "Nama": nama_bank,
+                            "Nama": nama,
                             "Bank": nama_bank,
                             "Rekening": rekening,
                             "Alamat": alamat_bank,
@@ -241,15 +247,13 @@ def halaman_gaji():
 
                     nama_sanitized = re.sub(r'[^a-zA-Z0-9_]', '_', nama)
                     pdf_filename = f"slip_gaji_{nama_sanitized}.pdf"
-                    create_pdf_reportlab(data, pdf_filename)
 
-                    with open(pdf_filename, "rb") as f:
-                        st.download_button(
-                            label="⬇️ Download PDF",
-                            data=f.read(),
-                            file_name=pdf_filename,
-                            mime="application/pdf"
-                        )
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
+                        create_pdf_reportlab(data, tmpfile.name)
+                        tmpfile.seek(0)
+                        st.download_button("⬇️ Download PDF", tmpfile.read(), file_name=pdf_filename, mime="application/pdf")
+                    os.remove(tmpfile.name)
+
                 except Exception as e:
                     log_exception(e, "Gagal membuat dan mengunduh slip gaji")
                     show_user_error("Gagal membuat slip gaji. Silakan periksa kembali data Anda.")
@@ -257,4 +261,3 @@ def halaman_gaji():
     except Exception as e:
         log_exception(e, "Kesalahan halaman_gaji")
         show_user_error("Terjadi kesalahan saat memuat data. Silakan coba lagi.")
-
