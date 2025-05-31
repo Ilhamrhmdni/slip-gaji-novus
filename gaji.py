@@ -1,64 +1,47 @@
+# gaji.py
+
 import streamlit as st
-import sqlite3
-from database import get_all_karyawan
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from io import BytesIO
-
-
-def tampilkan_form_gaji(karyawan_id, nama_karyawan):
-    st.markdown(f"### Form Slip Gaji untuk {nama_karyawan}")
-
-    gaji_pokok = st.number_input("Gaji Pokok", min_value=0, value=0, step=100000, key=f"gp_{karyawan_id}")
-    tunjangan = st.number_input("Tunjangan", min_value=0, value=0, step=100000, key=f"tunj_{karyawan_id}")
-    potongan = st.number_input("Potongan", min_value=0, value=0, step=100000, key=f"pot_{karyawan_id}")
-
-    if st.button("💾 Simpan & Download PDF", key=f"simpan_{karyawan_id}"):
-        total = gaji_pokok + tunjangan - potongan
-        buffer = BytesIO()
-        c = canvas.Canvas(buffer, pagesize=A4)
-
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(100, 800, f"Slip Gaji - {nama_karyawan}")
-        c.setFont("Helvetica", 12)
-        c.drawString(100, 770, f"Gaji Pokok      : Rp{gaji_pokok:,}")
-        c.drawString(100, 750, f"Tunjangan       : Rp{tunjangan:,}")
-        c.drawString(100, 730, f"Potongan        : Rp{potongan:,}")
-        c.drawString(100, 700, f"Total Diterima  : Rp{total:,}")
-        c.line(100, 690, 300, 690)
-
-        c.showPage()
-        c.save()
-
-        st.download_button(
-            label="📄 Download Slip Gaji PDF",
-            data=buffer.getvalue(),
-            file_name=f"Slip_Gaji_{nama_karyawan.replace(' ', '_')}.pdf",
-            mime="application/pdf"
-        )
-
+from database import get_all_karyawan, get_gaji_by_id, save_or_update_gaji
+from utils import format_rupiah
 
 def halaman_gaji():
-    st.title("📋 Daftar Karyawan & Slip Gaji")
-    
+    st.title("Data Slip Gaji Karyawan")
+
     data_karyawan = get_all_karyawan()
 
     if not data_karyawan:
-        st.warning("Belum ada data karyawan.")
+        st.info("Belum ada data karyawan.")
         return
 
-    # Gunakan session_state untuk melacak karyawan yang dipilih
-    if "selected_karyawan_id" not in st.session_state:
-        st.session_state.selected_karyawan_id = None
+    for id_karyawan, nama, jabatan, divisi in data_karyawan:
+        with st.expander(f"{nama} ({divisi} - {jabatan})"):
+            st.write(f"**ID:** {id_karyawan}")
+            gaji = get_gaji_by_id(id_karyawan)
 
-    for id_karyawan, nama in data_karyawan:
-        col1, col2 = st.columns([4, 1])
-        col1.write(f"**{nama}**")
-        if col2.button("📝 Isi Slip Gaji", key=f"btn_{id_karyawan}"):
-            st.session_state.selected_karyawan_id = id_karyawan
-            st.experimental_rerun()
+            with st.form(f"form_gaji_{id_karyawan}", clear_on_submit=False):
+                gaji_pokok = st.number_input("Gaji Pokok", min_value=0, value=gaji[0] if gaji else 0)
+                tunjangan_kinerja = st.number_input("Tunjangan Kinerja", min_value=0, value=gaji[1] if gaji else 0)
+                tunjangan_makan = st.number_input("Tunjangan Makan", min_value=0, value=gaji[2] if gaji else 0)
+                tunjangan_overtime = st.number_input("Tunjangan Lembur", min_value=0, value=gaji[3] if gaji else 0)
+                tunjangan_jabatan = st.number_input("Tunjangan Jabatan", min_value=0, value=gaji[4] if gaji else 0)
+                pph21 = st.number_input("PPH 21", min_value=0, value=gaji[5] if gaji else 0)
+                bpjs_kesehatan = st.number_input("BPJS Kesehatan", min_value=0, value=gaji[6] if gaji else 0)
+                bpjs_ketenagakerjaan = st.number_input("BPJS Ketenagakerjaan", min_value=0, value=gaji[7] if gaji else 0)
+                tagihan_hutang1 = st.number_input("Tagihan Hutang 1", min_value=0, value=gaji[8] if gaji else 0)
+                tagihan_hutang2 = st.number_input("Tagihan Hutang 2", min_value=0, value=gaji[9] if gaji else 0)
 
-        # Tampilkan form jika karyawan ini dipilih
-        if st.session_state.selected_karyawan_id == id_karyawan:
-            tampilkan_form_gaji(id_karyawan, nama)
-            st.markdown("---")
+                submitted = st.form_submit_button("Simpan Slip Gaji")
+                if submitted:
+                    save_or_update_gaji(id_karyawan, {
+                        "gaji_pokok": gaji_pokok,
+                        "tunjangan_kinerja": tunjangan_kinerja,
+                        "tunjangan_makan": tunjangan_makan,
+                        "tunjangan_overtime": tunjangan_overtime,
+                        "tunjangan_jabatan": tunjangan_jabatan,
+                        "pph21": pph21,
+                        "bpjs_kesehatan": bpjs_kesehatan,
+                        "bpjs_ketenagakerjaan": bpjs_ketenagakerjaan,
+                        "tagihan_hutang1": tagihan_hutang1,
+                        "tagihan_hutang2": tagihan_hutang2,
+                    })
+                    st.success("Data gaji berhasil disimpan.")
