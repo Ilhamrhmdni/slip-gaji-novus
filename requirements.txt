@@ -3,4 +3,3 @@ pandas
 num2words
 reportlab
 pillow
-python-terbilang
