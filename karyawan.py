@@ -18,7 +18,6 @@ def halaman_kelola_data():
             email = st.text_input("Email")
             nama_bank = st.text_input("Nama Bank")
             rekening = st.text_input("Rekening")
-            alamat_bank = st.text_area("Alamat Bank")
 
             submitted = st.form_submit_button("Simpan ke Database")
 
@@ -51,7 +50,7 @@ def halaman_kelola_data():
     data = get_all_karyawan()
     if data:
         import pandas as pd
-        df = pd.DataFrame(data, columns=["ID", "Nama", "Alamat", "No. Telp", "Divisi", "Jabatan", "Email", "Nama Bank", "Rekening", "Alamat Bank"])
+        df = pd.DataFrame(data, columns=["ID", "Nama", "Alamat", "No. Telp", "Divisi", "Jabatan", "Email", "Nama Bank", "Rekening"])
         st.dataframe(df)
     else:
         st.info("📁 Belum ada data karyawan.")
