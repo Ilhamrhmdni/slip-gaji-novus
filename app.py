@@ -1,18 +1,22 @@
-# app.py
 import streamlit as st
-from auth import halaman_login
-from karyawan import halaman_data_karyawan
-from gaji import halaman_gaji
-from database import init_db
+from auth import halaman_login, logout
+from gaji import halaman_gaji  # Pastikan gaji.py sudah ada fungsi halaman_gaji()
 
-init_db()
+# Cek apakah pengguna sudah login
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 
-st.sidebar.title("MENU UTAMA")
-menu = st.sidebar.radio("Pilih Menu", ["USER", "Data Karyawan", "Gaji"])
-
-if menu == "USER":
+# Jika belum login, tampilkan halaman login
+if not st.session_state.logged_in:
     halaman_login()
-elif menu == "Data Karyawan":
-    halaman_data_karyawan()
-elif menu == "Gaji":
-    halaman_gaji()
+else:
+    # Jika sudah login, tampilkan menu utama
+    st.sidebar.title("Navigasi")
+    pilihan = st.sidebar.selectbox("Pilih Halaman", ["Slip Gaji", "Kelola Data", "Logout"])
+
+    if pilihan == "Slip Gaji":
+        halaman_gaji()
+    elif pilihan == "Logout":
+        logout()
+    else:
+        st.write("Fitur lainnya akan ditambahkan...")
