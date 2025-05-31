@@ -67,3 +67,11 @@ def save_karyawan(data):
     ))
     conn.commit()
     conn.close()
+
+def get_karyawan_by_id(karyawan_id):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT * FROM karyawan WHERE id=?", (karyawan_id,))
+    data = c.fetchone()
+    conn.close()
+    return data
