@@ -1,9 +1,19 @@
 #!/bin/bash
-# Instal wkhtmltopdf
-apt-get update && apt-get install -y wkhtmltopdf
 
-# Instal dependensi tambahan (penting untuk menjalankan wkhtmltopdf headless)
-apt-get install -y xvfb libfontconfig1 libxrender1 libssl1.1
+# Instal dependensi
+apt-get update && apt-get install -y \
+    libfontconfig1 \
+    libxrender1 \
+    libx11-dev \
+    xfonts-75dpi \
+    xfonts-base
 
-# Instal library Python dari requirements.txt
+# Download dan instal wkhtmltopdf secara manual
+curl -LO https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb 
+dpkg -i wkhtmltox_0.12.6-1.focal_amd64.deb || true
+
+# Instal dependensi yang hilang (jika ada)
+apt-get install -f -y
+
+# Instal library Python
 pip install -r requirements.txt
