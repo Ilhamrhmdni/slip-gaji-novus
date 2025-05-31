@@ -53,27 +53,31 @@ def create_pdf_reportlab(data, nama_file):
 
         y_offset -= 60
 
+        # Data Pribadi & Data Bank
+        col_width = 200
+        row_height = 15
+
         # Data Pribadi
-        c.setFont("Helvetica-Bold", 12)
+        c.setFont("Helvetica-Bold", 10)
         c.drawString(50, y_offset, "Data Pribadi")
         y_offset -= 20
         c.setFont("Helvetica", 10)
         for key, value in data["data_pribadi"].items():
             c.drawString(50, y_offset, f"{key}: {value}")
-            y_offset -= 15
+            y_offset -= row_height
         y_offset -= 10
 
         # Data Bank
-        c.setFont("Helvetica-Bold", 12)
+        c.setFont("Helvetica-Bold", 10)
         c.drawString(50, y_offset, "Data Bank")
         y_offset -= 20
         c.setFont("Helvetica", 10)
         for key, value in data["data_bank"].items():
             c.drawString(50, y_offset, f"{key}: {value}")
-            y_offset -= 15
+            y_offset -= row_height
         y_offset -= 30
 
-        # Judul Tabel Penghasilan & Potongan
+        # Tabel Penghasilan & Potongan
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, y_offset, "PENGHASILAN")
         c.drawString(300, y_offset, "POTONGAN")
