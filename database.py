@@ -27,8 +27,7 @@ def init_db():
             jabatan TEXT,
             email TEXT,
             nama_bank TEXT,
-            rekening TEXT,
-            alamat_bank TEXT
+            rekening TEXT
         )
     ''')
 
@@ -80,11 +79,11 @@ def save_karyawan(data):
     c = conn.cursor()
     c.execute('''
         INSERT INTO karyawan 
-        (nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening, alamat_bank)
+        (id, nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        data["nama"], data["alamat"], data["no_telp"], data["divisi"],
-        data["jabatan"], data["email"], data["nama_bank"], data["rekening"], data["alamat_bank"]
+        data["id"], data["nama"], data["alamat"], data["no_telp"], data["divisi"],
+        data["jabatan"], data["email"], data["nama_bank"], data["rekening"]
     ))
     conn.commit()
     conn.close()
