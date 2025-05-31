@@ -1,9 +1,10 @@
 import streamlit as st
 import sqlite3
 import os
-from num2words import num2words
-from weasyprint import HTML
+import pdfkit
 import tempfile
+from num2words import num2words
+import pandas as pd
 
 # --- Konfigurasi Database ---
 DB_NAME = "karyawan.db"
@@ -312,12 +313,20 @@ def halaman_gaji():
             <br><p align='right'>Mengetahui, <br><br>Septian Kurnia Armando<br>Direktur</p>
             """
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
-                HTML(string=html_content).write_pdf(tmpfile.name)
-                with open(tmpfile.name, "rb") as f:
-                    pdf_data = f.read()
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
+                    pdfkit.from_string(html_content, tmpfile.name)
+                    with open(tmpfile.name, "rb") as f:
+                        pdf_data = f.read()
 
-            st.download_button("⬇️ Download PDF", data=pdf_data, file_name=f"slip_gaji_{nama}.pdf", mime="application/pdf")
+                st.download_button(
+                    label="⬇️ Download PDF",
+                    data=pdf_data,
+                    file_name=f"slip_gaji_{nama}.pdf",
+                    mime="application/pdf"
+                )
+            except Exception as e:
+                st.error(f"Gagal membuat PDF: {e}")
 
 # --- Main App Logic ---
 def main():
@@ -336,5 +345,4 @@ def main():
         halaman_gaji()
 
 if __name__ == "__main__":
-    import pandas as pd
     main()
