@@ -1,6 +1,6 @@
 import streamlit as st
 
-def halaman_data_karyawan():
+def halaman_kelola_data():
     st.title("👥 Kelola Data Karyawan")
 
     if not st.session_state.get("logged_in", False):
