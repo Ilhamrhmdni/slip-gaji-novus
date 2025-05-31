@@ -8,7 +8,7 @@ def create_pdf_reportlab(data, nama_file):
         c.setFont("Helvetica-Bold", 18)
         c.drawString(50, y_offset, "SLIP GAJI KARYAWAN")
         y_offset -= 20
-        c.setFont("Helvetica", 12)
+        c.setFont("Helvetica", 10)
         c.drawString(50, y_offset, f"Periode: {data['periode']}")
         y_offset -= 40
 
@@ -55,11 +55,11 @@ def create_pdf_reportlab(data, nama_file):
         c.drawString(300, y_offset, "POTONGAN")
         y_offset -= 20
 
+        row_height = 15
         col_penghasilan_x = 50
         col_penghasilan_nilai_x = 200
         col_potongan_x = 300
         col_potongan_nilai_x = 450
-        row_height = 15
 
         penghasilan = [
             ("Gaji Pokok", data["gaji_pokok"]),
