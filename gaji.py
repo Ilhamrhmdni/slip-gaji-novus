@@ -1,10 +1,7 @@
 # gaji.py
 import streamlit as st
 import pdfkit
-from num2words import num2words
-
-def format_rupiah(angka):
-    return f"Rp {angka:,.0f}".replace(",", ".")
+from utils import format_rupiah, terbilang_rupiah
 
 def halaman_gaji():
     st.title("💰 Slip Gaji")
@@ -97,7 +94,7 @@ def halaman_gaji():
           <tr><td colspan="2"></td><td><strong>Pembayaran</strong></td><td><strong>{format_rupiah(pembayaran)}</strong></td></tr>
         </table>
 
-        <p><strong>Terbilang:</strong> {num2words(pembayaran, lang='id').capitalize()} rupiah</p>
+        <p><strong>Terbilang:</strong> {terbilang_rupiah(pembayaran)}</p>
         <br><p align='right'>Mengetahui, <br><br>Septian Kurnia Armando<br>Direktur</p>
         """
 
