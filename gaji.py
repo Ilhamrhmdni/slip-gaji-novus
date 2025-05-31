@@ -1,109 +1,118 @@
 # gaji.py
 import streamlit as st
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from utils import format_rupiah, terbilang_rupiah
 
-def create_pdf_reportlab(data, nama_file):
-    c = canvas.Canvas(nama_file, pagesize=letter)
-    width, height = letter  # Ukuran halaman (612 x 792)
+def create_html_content(data):
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Slip Gaji - {data['data_pribadi']['Nama']}</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }}
+            h3 {{
+                text-align: center;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }}
+            th, td {{
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }}
+            th {{
+                background-color: #f4f4f4;
+            }}
+            .terbilang {{
+                margin-top: 20px;
+                font-style: italic;
+            }}
+            .tanda-tangan {{
+                margin-top: 40px;
+                text-align: right;
+            }}
+        </style>
+    </head>
+    <body>
+        <h3>SLIP GAJI KARYAWAN</h3>
+        <p style="text-align:center;">Periode: {data['periode']}</p>
 
-    # Header
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, height - 50, "SLIP GAJI KARYAWAN")
-    c.setFont("Helvetica", 12)
-    c.drawString(50, height - 70, f"Periode: {data['periode']}")
+        <h4>Data Pribadi</h4>
+        <ul>
+            <li><b>Nama:</b> {data['data_pribadi']['Nama']}</li>
+            <li><b>Alamat:</b> {data['data_pribadi']['Alamat']}</li>
+            <li><b>No. Telp:</b> {data['data_pribadi']['No. Telp']}</li>
+            <li><b>Divisi:</b> {data['data_pribadi']['Divisi']}</li>
+            <li><b>Jabatan:</b> {data['data_pribadi']['Jabatan']}</li>
+        </ul>
 
-    # Data Pribadi
-    y_offset = height - 100
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y_offset, "Data Pribadi")
-    y_offset -= 20
+        <h4>Data Bank</h4>
+        <ul>
+            <li><b>Nama:</b> {data['data_bank']['Nama']}</li>
+            <li><b>Bank:</b> {data['data_bank']['Bank']}</li>
+            <li><b>Rekening:</b> {data['data_bank']['Rekening']}</li>
+            <li><b>Alamat:</b> {data['data_bank']['Alamat']}</li>
+            <li><b>Email:</b> {data['data_bank']['Email']}</li>
+        </ul>
 
-    c.setFont("Helvetica", 12)
-    for key, value in data["data_pribadi"].items():
-        c.drawString(50, y_offset, f"{key}: {value}")
-        y_offset -= 20
+        <h4>Rincian Gaji</h4>
+        <table>
+            <tr>
+                <th>PENGHASILAN</th>
+                <th></th>
+                <th>POTONGAN</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td>Gaji Pokok</td>
+                <td>{format_rupiah(data['gaji_pokok'])}</td>
+                <td>PPh 21</td>
+                <td>{format_rupiah(data['pph21'])}</td>
+            </tr>
+            <tr>
+                <td>Tunjangan Kinerja</td>
+                <td>{format_rupiah(data['tunjangan_kinerja'])}</td>
+                <td>BPJS Kesehatan</td>
+                <td>{format_rupiah(data['bpjs_kesehatan'])}</td>
+            </tr>
+            <tr>
+                <td>Tunjangan Makan</td>
+                <td>{format_rupiah(data['tunjangan_makan'])}</td>
+                <td>BPJS Ketenagakerjaan</td>
+                <td>{format_rupiah(data['bpjs_ketenagakerjaan'])}</td>
+            </tr>
+            <tr>
+                <td>Total Penghasilan</td>
+                <td><strong>{format_rupiah(data['total_penghasilan'])}</strong></td>
+                <td>Total Potongan</td>
+                <td><strong>{format_rupiah(data['total_potongan'])}</strong></td>
+            </tr>
+            <tr>
+                <td colspan="2"></td>
+                <td><strong>Pembayaran</strong></td>
+                <td><strong>{format_rupiah(data['pembayaran'])}</strong></td>
+            </tr>
+        </table>
 
-    # Data Bank
-    y_offset -= 20
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y_offset, "Data Bank")
-    y_offset -= 20
+        <p class="terbilang"><strong>Terbilang:</strong> {terbilang_rupiah(data['pembayaran'])}</p>
 
-    c.setFont("Helvetica", 12)
-    for key, value in data["data_bank"].items():
-        c.drawString(50, y_offset, f"{key}: {value}")
-        y_offset -= 20
-
-    # Tabel Penghasilan dan Potongan
-    y_offset -= 30
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y_offset, "Rincian Gaji")
-    y_offset -= 20
-
-    c.setFont("Helvetica", 12)
-    headers = ["PENGHASILAN", "", "POTONGAN", ""]
-    row_height = 15
-    col_widths = [150, 100, 150, 100]
-
-    # Gambar header tabel
-    x_offset = 50
-    for i, header in enumerate(headers):
-        c.drawString(x_offset, y_offset, header)
-        x_offset += col_widths[i]
-
-    y_offset -= row_height
-    x_offset = 50
-
-    # Isi tabel
-    penghasilan = [
-        ("Gaji Pokok", data["gaji_pokok"]),
-        ("Tunjangan Kinerja", data["tunjangan_kinerja"]),
-        ("Tunjangan Makan", data["tunjangan_makan"]),
-        ("Tunjangan Overtime", data["tunjangan_overtime"]),
-        ("Tunjangan Jabatan", data["tunjangan_jabatan"]),
-        ("Total Penghasilan", data["total_penghasilan"])
-    ]
-
-    potongan = [
-        ("PPh 21", data["pph21"]),
-        ("BPJS Kesehatan", data["bpjs_kesehatan"]),
-        ("BPJS Ketenagakerjaan", data["bpjs_ketenagakerjaan"]),
-        ("Tagihan Hutang 1", data["tagihan_hutang1"]),
-        ("Tagihan Hutang 2", data["tagihan_hutang2"]),
-        ("Total Potongan", data["total_potongan"])
-    ]
-
-    for i in range(len(penghasilan)):
-        c.drawString(x_offset, y_offset, str(penghasilan[i][0]))
-        c.drawString(x_offset + col_widths[1], y_offset, format_rupiah(penghasilan[i][1]))
-        c.drawString(x_offset + col_widths[2], y_offset, str(potongan[i][0]))
-        c.drawString(x_offset + sum(col_widths[:3]), y_offset, format_rupiah(potongan[i][1]))
-        y_offset -= row_height
-
-    # Pembayaran
-    y_offset -= 20
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y_offset, "Pembayaran")
-    c.setFont("Helvetica", 12)
-    c.drawString(200, y_offset, format_rupiah(data["pembayaran"]))
-
-    # Terbilang
-    y_offset -= 20
-    terbilang = terbilang_rupiah(data["pembayaran"])
-    c.drawString(50, y_offset, f"Terbilang: {terbilang}")
-
-    # Tanda tangan
-    y_offset -= 40
-    c.setFont("Helvetica", 12)
-    c.drawString(400, y_offset, "Mengetahui,")
-    y_offset -= 20
-    c.drawString(400, y_offset, "Septian Kurnia Armando")
-    y_offset -= 20
-    c.drawString(400, y_offset, "Direktur")
-
-    c.save()
+        <div class="tanda-tangan">
+            Mengetahui,<br><br>
+            Septian Kurnia Armando<br>
+            Direktur
+        </div>
+    </body>
+    </html>
+    """
+    return html_content
 
 def halaman_gaji():
     st.title("💰 Slip Gaji")
@@ -164,7 +173,7 @@ def halaman_gaji():
         total_potongan = pph21 + bpjs_kesehatan + bpjs_ketenagakerjaan + tagihan_hutang1 + tagihan_hutang2
         pembayaran = total_penghasilan - total_potongan
 
-        if st.button("Cetak Slip Gaji"):
+        if st.button("Cetak Slip Gaji (HTML)"):
             data = {
                 "periode": periode,
                 "data_pribadi": {
@@ -196,13 +205,10 @@ def halaman_gaji():
                 "pembayaran": pembayaran
             }
 
-            pdf_filename = f"slip_gaji_{nama}.pdf"
-            create_pdf_reportlab(data, pdf_filename)
-
-            with open(pdf_filename, "rb") as f:
-                st.download_button(
-                    label="⬇️ Download PDF",
-                    data=f.read(),
-                    file_name=pdf_filename,
-                    mime="application/pdf"
-                )
+            html_content = create_html_content(data)
+            st.download_button(
+                label="⬇️ Download HTML",
+                data=html_content,
+                file_name=f"slip_gaji_{nama}.html",
+                mime="text/html"
+            )
