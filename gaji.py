@@ -4,8 +4,21 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from utils import format_rupiah, terbilang_rupiah
 from error_handling import log_exception, show_user_error
+from PIL import Image
 import os
 import re
+
+def convert_png_to_rgb(input_path, output_path, bg_color=(255, 255, 255)):
+    try:
+        img = Image.open(input_path)
+        if img.mode in ('RGBA', 'LA'):
+            background = Image.new("RGB", img.size, bg_color)
+            background.paste(img, mask=img.split()[3])
+            background.save(output_path, 'PNG')
+        else:
+            img.convert("RGB").save(output_path, 'PNG')
+    except Exception as e:
+        log_exception(e, f"Gagal konversi PNG {input_path}")
 
 def create_pdf_reportlab(data, nama_file):
     try:
@@ -19,16 +32,17 @@ def create_pdf_reportlab(data, nama_file):
         c.setFont("Helvetica", 12)
         c.drawString(50, height - 70, f"Periode: {data['periode']}")
 
-        # Logo perusahaan
-        try:
-            if os.path.exists("novus_logo.png"):
-                c.drawImage("novus_logo.png", 450, height - 60, width=100, height=50)
-            else:
-                c.drawString(450, height - 60, "[Logo tidak ditemukan]")
-        except Exception as e:
-            log_exception(e, "Gagal memuat logo")
-            c.drawString(450, height - 60, "[Logo error]")
+        # Logo
+        logo_path = "novus_logo.png"
+        logo_rgb_path = "novus_logo_rgb.png"
+        convert_png_to_rgb(logo_path, logo_rgb_path)
 
+        if os.path.exists(logo_rgb_path):
+            c.drawImage(logo_rgb_path, 450, height - 60, width=100, height=50)
+        else:
+            c.drawString(450, height - 60, "[Logo tidak ditemukan]")
+
+        # Alamat kantor
         c.setFont("Helvetica", 10)
         c.drawString(450, height - 100, "NOVUS Stream Lab")
         c.drawString(450, height - 115, "Jl. Wijaya Kusuma No. 1 Munggut Kec. Wungu")
@@ -54,7 +68,7 @@ def create_pdf_reportlab(data, nama_file):
             c.drawString(50, y_offset, f"{key}: {value}")
             y_offset -= 15
 
-        # Tabel
+        # Tabel penghasilan & potongan
         y_offset -= 30
         c.setFont("Helvetica-Bold", 10)
         c.drawString(50, y_offset, "PENGHASILAN")
@@ -114,24 +128,28 @@ def create_pdf_reportlab(data, nama_file):
         c.setFont("Helvetica", 10)
         c.drawString(400, y_offset, "Mengetahui,")
 
-        try:
-            if os.path.exists("signature.png"):
-                c.drawImage("signature.png", 450, y_offset - 50, width=50, height=50)
-            else:
-                c.drawString(450, y_offset - 50, "[Ttd tidak ditemukan]")
-        except Exception as e:
-            log_exception(e, "Gagal memuat tanda tangan")
-            c.drawString(450, y_offset - 50, "[Ttd error]")
+        signature_path = "signature.png"
+        signature_rgb_path = "signature_rgb.png"
+        convert_png_to_rgb(signature_path, signature_rgb_path)
+
+        if os.path.exists(signature_rgb_path):
+            c.drawImage(signature_rgb_path, 450, y_offset - 50, width=50, height=50)
+        else:
+            c.drawString(450, y_offset - 50, "[Ttd tidak ditemukan]")
 
         c.drawString(400, y_offset - 70, "Septian Kurnia Armando")
         c.drawString(400, y_offset - 85, "Direktur")
 
         c.save()
 
+        # Bersihkan file konversi sementara
+        for f in [logo_rgb_path, signature_rgb_path]:
+            if os.path.exists(f):
+                os.remove(f)
+
     except Exception as e:
         log_exception(e, "Gagal membuat PDF slip gaji")
         raise
-
 
 def halaman_gaji():
     st.title("💰 Slip Gaji")
@@ -235,6 +253,7 @@ def halaman_gaji():
                 except Exception as e:
                     log_exception(e, "Gagal membuat dan mengunduh slip gaji")
                     show_user_error("Gagal membuat slip gaji. Silakan periksa kembali data Anda.")
+
     except Exception as e:
         log_exception(e, "Kesalahan halaman_gaji")
         show_user_error("Terjadi kesalahan saat memuat data. Silakan coba lagi.")
