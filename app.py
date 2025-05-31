@@ -1,6 +1,7 @@
 import streamlit as st
 from auth import halaman_login, logout
-from gaji import halaman_gaji  # Pastikan gaji.py sudah ada fungsi halaman_gaji()
+from gaji import halaman_gaji
+from karyawan import halaman_kelola_data  # Baru: Kelola Data Karyawan
 
 # Cek apakah pengguna sudah login
 if "logged_in" not in st.session_state:
@@ -16,6 +17,8 @@ else:
 
     if pilihan == "Slip Gaji":
         halaman_gaji()
+    elif pilihan == "Kelola Data":
+        halaman_kelola_data()
     elif pilihan == "Logout":
         logout()
     else:
