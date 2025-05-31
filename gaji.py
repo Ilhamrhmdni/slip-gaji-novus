@@ -32,7 +32,7 @@ def create_pdf_reportlab(data, nama_file):
         c.setFont("Helvetica-Bold", 18)
         c.drawString(50, y_offset, "SLIP GAJI KARYAWAN")
         y_offset -= 20
-        c.setFont("Helvetica", 10)
+        c.setFont("Helvetica", 12)
         c.drawString(50, y_offset, f"Periode: {data['periode']}")
         y_offset -= 40
 
@@ -46,10 +46,10 @@ def create_pdf_reportlab(data, nama_file):
         # Alamat Perusahaan
         c.setFont("Helvetica", 10)
         c.drawString(450, y_offset + 20, "NOVUS Stream Lab")
-        c.drawString(450, y_offset - 10, "Jl. Wijaya Kusuma No. 1 Munggut")
-        c.drawString(450, y_offset - 25, "Kec. Wungu, Kab. Malang")
-        c.drawString(450, y_offset - 40, "Jawa Timur 63181")
-        c.drawString(450, y_offset - 55, "Email: novustreamlab@gmail.com")
+        c.drawString(450, y_offset + 5, "Jl. Wijaya Kusuma No. 1 Munggut")
+        c.drawString(450, y_offset - 10, "Kec. Wungu, Kab. Malang")
+        c.drawString(450, y_offset - 25, "Jawa Timur 63181")
+        c.drawString(450, y_offset - 40, "Email: novustreamlab@gmail.com")
 
         y_offset -= 60
 
@@ -73,7 +73,7 @@ def create_pdf_reportlab(data, nama_file):
             y_offset -= 15
         y_offset -= 30
 
-        # Tabel Penghasilan & Potongan
+        # Judul Tabel Penghasilan & Potongan
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, y_offset, "PENGHASILAN")
         c.drawString(300, y_offset, "POTONGAN")
