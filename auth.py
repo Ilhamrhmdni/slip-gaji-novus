@@ -1,4 +1,3 @@
-# auth.py
 import streamlit as st
 
 def halaman_login():
@@ -11,7 +10,14 @@ def halaman_login():
         user = login_user(username, password)
         if user:
             st.session_state.logged_in = True
-            st.session_state.role = user[3]
+            st.session_state.role = user[3]  # Simpan peran (role) user
             st.success("Login Berhasil!")
+            st.rerun()  # Muat ulang agar form login hilang
         else:
             st.error("Username atau Password salah")
+
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.role = None
+    st.info("Anda telah logout.")
+    st.rerun()
