@@ -2,7 +2,7 @@
 import streamlit as st
 
 def halaman_data_karyawan():
-    st.title("👥 Data Karyawan")
+    st.title("👥 Input Data Karyawan")
 
     if not st.session_state.get("logged_in", False):
         st.warning("Silakan login terlebih dahulu.")
@@ -40,4 +40,5 @@ def halaman_data_karyawan():
     st.markdown("### Daftar Karyawan")
     from database import get_all_karyawan
     data = get_all_karyawan()
-    st.write(data)  # Ganti dengan tampilan yang lebih baik jika perlu
+    for row in data:
+        st.write(f"{row[1]} - {row[2]}")
