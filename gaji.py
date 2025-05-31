@@ -1,4 +1,3 @@
-# gaji.py
 import streamlit as st
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -7,6 +6,8 @@ from error_handling import log_exception, show_user_error
 from PIL import Image
 import os
 import re
+from database import get_all_karyawan, get_karyawan_by_id, get_gaji_by_id
+import zipfile
 
 def convert_png_to_rgb(input_path, output_path, bg_color=(255, 255, 255)):
     try:
@@ -158,57 +159,36 @@ def halaman_gaji():
         st.warning("Silakan login terlebih dahulu.")
         return
 
-    from database import get_all_karyawan, get_karyawan_by_id
+    st.subheader("Cetak Slip Gaji Massal")
+    periode = st.text_input("Periode", value="Januari 2025")
 
-    try:
-        data_karyawan = get_all_karyawan()
-        if not data_karyawan:
-            st.info("Belum ada data karyawan.")
-            return
+    if st.button("📦 Cetak Semua Slip Gaji"):
+        try:
+            karyawan_list = get_all_karyawan()
+            if not karyawan_list:
+                st.info("Tidak ada data karyawan.")
+                return
 
-        karyawan_dict = {row[1]: row[0] for row in data_karyawan}
-        nama_karyawan = st.selectbox("Pilih Nama Karyawan", options=karyawan_dict.keys())
-        data = get_karyawan_by_id(karyawan_dict[nama_karyawan])
+            with zipfile.ZipFile("slip_massal.zip", "w") as zipf:
+                for id_karyawan, nama, jabatan, divisi in karyawan_list:
+                    data_kar = get_karyawan_by_id(id_karyawan)
+                    data_gaji = get_gaji_by_id(id_karyawan)
 
-        if data:
-            _, nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening, alamat_bank = data
+                    if not data_kar or not data_gaji:
+                        continue  # Lewatkan jika ada data yang tidak lengkap
 
-            col1, col2 = st.columns(2)
-            with col1:
-                st.text_input("Nama", value=nama, key="g_nama")
-                st.text_input("Alamat", value=alamat, key="g_alamat")
-                st.text_input("No. Telp", value=no_telp, key="g_no_telp")
-                st.text_input("Divisi", value=divisi, key="g_divisi")
-                st.text_input("Jabatan", value=jabatan, key="g_jabatan")
-                st.text_input("Email", value=email, key="g_email")
-            with col2:
-                st.text_input("Nama Bank", value=nama_bank, key="g_nama_bank")
-                st.text_input("Rekening", value=rekening, key="g_rekening")
-                st.text_area("Alamat Bank", value=alamat_bank, key="g_alamat_bank", height=150)
-                periode = st.text_input("Periode", value="Januari 2025")
+                    _, nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening, alamat_bank = data_kar
+                    (
+                        gaji_pokok, tunjangan_kinerja, tunjangan_makan, tunjangan_overtime,
+                        tunjangan_jabatan, pph21, bpjs_kesehatan, bpjs_ketenagakerjaan,
+                        tagihan_hutang1, tagihan_hutang2
+                    ) = data_gaji
 
-            st.header("Penghasilan")
-            col_kiri, col_kanan = st.columns(2)
-            with col_kiri:
-                gaji_pokok = st.number_input("Gaji Pokok", min_value=0, value=2_000_000)
-                tunjangan_kinerja = st.number_input("Tunjangan Kinerja", min_value=0)
-                tunjangan_makan = st.number_input("Tunjangan Makan", min_value=0)
-                tunjangan_overtime = st.number_input("Tunjangan Overtime", min_value=0)
-                tunjangan_jabatan = st.number_input("Tunjangan Jabatan", min_value=0)
-            with col_kanan:
-                pph21 = st.number_input("PPh 21", min_value=0)
-                bpjs_kesehatan = st.number_input("BPJS Kesehatan", min_value=0)
-                bpjs_ketenagakerjaan = st.number_input("BPJS Ketenagakerjaan", min_value=0)
-                tagihan_hutang1 = st.number_input("Tagihan Hutang 1", min_value=0)
-                tagihan_hutang2 = st.number_input("Tagihan Hutang 2", min_value=0)
+                    total_penghasilan = gaji_pokok + tunjangan_kinerja + tunjangan_makan + tunjangan_overtime + tunjangan_jabatan
+                    total_potongan = pph21 + bpjs_kesehatan + bpjs_ketenagakerjaan + tagihan_hutang1 + tagihan_hutang2
+                    pembayaran = total_penghasilan - total_potongan
 
-            total_penghasilan = gaji_pokok + tunjangan_kinerja + tunjangan_makan + tunjangan_overtime + tunjangan_jabatan
-            total_potongan = pph21 + bpjs_kesehatan + bpjs_ketenagakerjaan + tagihan_hutang1 + tagihan_hutang2
-            pembayaran = total_penghasilan - total_potongan
-
-            if st.button("Cetak Slip Gaji"):
-                try:
-                    data = {
+                    slip_data = {
                         "periode": periode,
                         "data_pribadi": {
                             "Nama": nama,
@@ -218,7 +198,7 @@ def halaman_gaji():
                             "Jabatan": jabatan
                         },
                         "data_bank": {
-                            "Nama": nama_bank,
+                            "Nama": nama,
                             "Bank": nama_bank,
                             "Rekening": rekening,
                             "Alamat": alamat_bank,
@@ -240,20 +220,15 @@ def halaman_gaji():
                     }
 
                     nama_sanitized = re.sub(r'[^a-zA-Z0-9_]', '_', nama)
-                    pdf_filename = f"slip_gaji_{nama_sanitized}.pdf"
-                    create_pdf_reportlab(data, pdf_filename)
+                    pdf_name = f"slip_gaji_{nama_sanitized}.pdf"
+                    create_pdf_reportlab(slip_data, pdf_name)
+                    zipf.write(pdf_name)
+                    os.remove(pdf_name)
 
-                    with open(pdf_filename, "rb") as f:
-                        st.download_button(
-                            label="⬇️ Download PDF",
-                            data=f.read(),
-                            file_name=pdf_filename,
-                            mime="application/pdf"
-                        )
-                except Exception as e:
-                    log_exception(e, "Gagal membuat dan mengunduh slip gaji")
-                    show_user_error("Gagal membuat slip gaji. Silakan periksa kembali data Anda.")
+            with open("slip_massal.zip", "rb") as f:
+                st.download_button("⬇️ Download Slip Massal (ZIP)", f.read(), "slip_massal.zip")
 
-    except Exception as e:
-        log_exception(e, "Kesalahan halaman_gaji")
-        show_user_error("Terjadi kesalahan saat memuat data. Silakan coba lagi.")
+        except Exception as e:
+            log_exception(e, "Gagal membuat slip massal")
+            show_user_error("Terjadi kesalahan saat membuat slip massal.")
+
