@@ -1,6 +1,5 @@
 import streamlit as st
 import sqlite3
-import os
 import pdfkit
 import tempfile
 from num2words import num2words
@@ -73,29 +72,6 @@ def save_to_db(data):
     conn.commit()
     conn.close()
 
-def update_karyawan(data, karyawan_id):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute('''
-        UPDATE karyawan SET
-        nama=?, alamat=?, no_telp=?, divisi=?, jabatan=?, email=?, 
-        nama_bank=?, rekening=?, alamat_bank=?
-        WHERE id=?
-    ''', (
-        data["nama"], data["alamat"], data["no_telp"], data["divisi"],
-        data["jabatan"], data["email"], data["nama_bank"], data["rekening"],
-        data["alamat_bank"], karyawan_id
-    ))
-    conn.commit()
-    conn.close()
-
-def delete_karyawan(karyawan_id):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("DELETE FROM karyawan WHERE id=?", (karyawan_id,))
-    conn.commit()
-    conn.close()
-
 # --- Fungsi Halaman ---
 def halaman_user():
     st.title("🔐 Login Admin")
@@ -150,52 +126,6 @@ def halaman_data_karyawan():
     st.markdown("### Daftar Karyawan")
     df = get_all_karyawan()
     st.dataframe(df)
-
-    if st.session_state.role == "admin":
-        st.markdown("### ❌ Hapus / ✏️ Edit Data")
-        selected_id = st.selectbox("Pilih ID Karyawan", df["id"])
-        conn = sqlite3.connect(DB_NAME)
-        c = conn.cursor()
-        c.execute("SELECT * FROM karyawan WHERE id=?", (selected_id,))
-        data = c.fetchone()
-        conn.close()
-
-        if data:
-            _, nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening, alamat_bank = data
-            with st.form(f"edit_form_{selected_id}"):
-                edit_nama = st.text_input("Nama", value=nama)
-                edit_alamat = st.text_input("Alamat", value=alamat)
-                edit_no_telp = st.text_input("No. Telp", value=no_telp)
-                edit_divisi = st.text_input("Divisi", value=divisi)
-                edit_jabatan = st.text_input("Jabatan", value=jabatan)
-                edit_email = st.text_input("Email", value=email)
-                edit_nama_bank = st.text_input("Nama Bank", value=nama_bank)
-                edit_rekening = st.text_input("Rekening", value=rekening)
-                edit_alamat_bank = st.text_area("Alamat Bank", value=alamat_bank)
-
-                col1, col2 = st.columns(2)
-                with col1:
-                    update_btn = st.form_submit_button("Update")
-                with col2:
-                    delete_btn = st.form_submit_button("Hapus")
-
-                if update_btn:
-                    update_karyawan({
-                        "nama": edit_nama,
-                        "alamat": edit_alamat,
-                        "no_telp": edit_no_telp,
-                        "divisi": edit_divisi,
-                        "jabatan": edit_jabatan,
-                        "email": edit_email,
-                        "nama_bank": edit_nama_bank,
-                        "rekening": edit_rekening,
-                        "alamat_bank": edit_alamat_bank
-                    }, selected_id)
-                    st.success("Data berhasil diperbarui.")
-
-                if delete_btn:
-                    delete_karyawan(selected_id)
-                    st.success("Data berhasil dihapus.")
 
 def halaman_gaji():
     st.title("💰 Slip Gaji")
