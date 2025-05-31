@@ -37,7 +37,7 @@ def create_pdf_reportlab(data, nama_file):
         y_offset -= 40
 
         # Logo
-        logo_path = "assets/novus_logo.png"
+        logo_path = "novus_logo.png"
         logo_rgb_path = "novus_logo_rgb.png"
         convert_png_to_rgb(logo_path, logo_rgb_path)
         if os.path.exists(logo_rgb_path):
@@ -126,7 +126,7 @@ def create_pdf_reportlab(data, nama_file):
         c.setFont("Helvetica", 10)
         c.drawString(400, y_offset, "Mengetahui,")
 
-        signature_path = "assets/signature.png"
+        signature_path = "signature.png"
         signature_rgb_path = "signature_rgb.png"
         convert_png_to_rgb(signature_path, signature_rgb_path)
 
