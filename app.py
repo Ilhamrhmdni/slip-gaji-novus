@@ -1,9 +1,8 @@
 import streamlit as st
 import sqlite3
 import pdfkit
-import tempfile
-from num2words import num2words
 import pandas as pd
+from num2words import num2words
 
 # --- Konfigurasi Database ---
 DB_NAME = "karyawan.db"
@@ -244,14 +243,16 @@ def halaman_gaji():
             """
 
             try:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
-                    pdfkit.from_string(html_content, tmpfile.name)
-                    with open(tmpfile.name, "rb") as f:
-                        pdf_data = f.read()
+                # Paksa path wkhtmltopdf
+                config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 
+                # Buat PDF
+                pdf = pdfkit.from_string(html_content, False, configuration=config)
+
+                # Tombol download
                 st.download_button(
                     label="⬇️ Download PDF",
-                    data=pdf_data,
+                    data=pdf,
                     file_name=f"slip_gaji_{nama}.pdf",
                     mime="application/pdf"
                 )
