@@ -33,7 +33,6 @@ def create_pdf_reportlab(data, nama_file):
         logo_path = "novus_logo.png"
         logo_rgb_path = "novus_logo_rgb.png"
         convert_png_to_rgb(logo_path, logo_rgb_path)
-
         if os.path.exists(logo_rgb_path):
             c.drawImage(logo_rgb_path, 450, height - 60, width=100, height=50)
         else:
@@ -76,13 +75,14 @@ def create_pdf_reportlab(data, nama_file):
         row_height = 18
         col_widths = [150, 60, 150, 60]
 
+        # Tulis header tabel
         x_offset = 50
         for i, header in enumerate(headers):
             c.drawString(x_offset, y_offset, header)
             x_offset += col_widths[i]
 
         y_offset -= row_height
-        start_table_y = y_offset + row_height  # simpan posisi atas tabel untuk garis
+        start_table_y = y_offset + row_height  # posisi garis atas tabel
 
         penghasilan = [
             ("Gaji Pokok", data["gaji_pokok"]),
@@ -102,6 +102,7 @@ def create_pdf_reportlab(data, nama_file):
             ("Total Potongan", data["total_potongan"])
         ]
 
+        # Isi data tabel
         for i in range(len(penghasilan)):
             c.drawString(50, y_offset, str(penghasilan[i][0]))
             c.drawString(50 + col_widths[0], y_offset, format_rupiah(penghasilan[i][1]))
@@ -109,14 +110,14 @@ def create_pdf_reportlab(data, nama_file):
             c.drawString(50 + sum(col_widths[:3]), y_offset, format_rupiah(potongan[i][1]))
             y_offset -= row_height
 
-        # Gambar garis tabel (border)
+        # Gambar garis tabel
         table_left = 50
         table_top = start_table_y
         table_width = sum(col_widths)
-        table_height = row_height * (len(penghasilan) + 1)  # header + baris data
+        table_height = row_height * (len(penghasilan) + 1)  # header + rows
 
         # Garis horizontal
-        for i in range(len(penghasilan) + 2):  # +1 header + 1 baris bawah
+        for i in range(len(penghasilan) + 2):  # +1 header + 1 bawah
             y = table_top - i * row_height
             c.line(table_left, y, table_left + table_width, y)
 
@@ -145,7 +146,6 @@ def create_pdf_reportlab(data, nama_file):
         signature_path = "signature.png"
         signature_rgb_path = "signature_rgb.png"
         convert_png_to_rgb(signature_path, signature_rgb_path)
-
         if os.path.exists(signature_rgb_path):
             c.drawImage(signature_rgb_path, 450, y_offset - 50, width=50, height=50)
         else:
