@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daftar Slip Gaji</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Daftar Slip Gaji</h1>
+  <div id="slipList"></div>
+
+  <script type="module" src="script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> 
+
+  <script>
+    window.onload = () => {
+      loadSlips();
+    };
+
+    function generatePDF(data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text(`SLIP GAJI`, 10, 10);
+      doc.text(`Nama: ${data.nama}`, 10, 20);
+      doc.text(`Jabatan: ${data.jabatan}`, 10, 30);
+      doc.text(`Gaji: Rp${parseInt(data.gaji).toLocaleString()}`, 10, 40);
+      doc.text(`Tanggal: ${data.tanggal}`, 10, 50);
+      doc.save(`Slip_Gaji_${data.nama}.pdf`);
+    }
+  </script>
+</body>
+</html>
