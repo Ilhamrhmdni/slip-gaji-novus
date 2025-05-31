@@ -1,9 +1,12 @@
+# gaji.py
+import streamlit as st
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from utils import format_rupiah, terbilang_rupiah
-from error_handling import log_exception
+from error_handling import log_exception, show_user_error
 from PIL import Image
 import os
+import re
 
 def convert_png_to_rgb(input_path, output_path, bg_color=(255, 255, 255)):
     try:
@@ -33,6 +36,7 @@ def create_pdf_reportlab(data, nama_file):
         logo_path = "novus_logo.png"
         logo_rgb_path = "novus_logo_rgb.png"
         convert_png_to_rgb(logo_path, logo_rgb_path)
+
         if os.path.exists(logo_rgb_path):
             c.drawImage(logo_rgb_path, 450, height - 60, width=100, height=50)
         else:
@@ -72,17 +76,16 @@ def create_pdf_reportlab(data, nama_file):
         y_offset -= 20
 
         headers = ["Gaji Pokok", "Rp", "PPh 21", "Rp"]
-        row_height = 18
-        col_widths = [150, 60, 150, 60]
+        row_height = 15
+        col_widths = [150, 50, 150, 50]
 
-        # Tulis header tabel
         x_offset = 50
         for i, header in enumerate(headers):
             c.drawString(x_offset, y_offset, header)
             x_offset += col_widths[i]
 
         y_offset -= row_height
-        start_table_y = y_offset + row_height  # posisi garis atas tabel
+        x_offset = 50
 
         penghasilan = [
             ("Gaji Pokok", data["gaji_pokok"]),
@@ -102,30 +105,12 @@ def create_pdf_reportlab(data, nama_file):
             ("Total Potongan", data["total_potongan"])
         ]
 
-        # Isi data tabel
         for i in range(len(penghasilan)):
-            c.drawString(50, y_offset, str(penghasilan[i][0]))
-            c.drawString(50 + col_widths[0], y_offset, format_rupiah(penghasilan[i][1]))
-            c.drawString(50 + col_widths[0] + col_widths[1], y_offset, str(potongan[i][0]))
-            c.drawString(50 + sum(col_widths[:3]), y_offset, format_rupiah(potongan[i][1]))
+            c.drawString(x_offset, y_offset, str(penghasilan[i][0]))
+            c.drawString(x_offset + col_widths[1], y_offset, format_rupiah(penghasilan[i][1]))
+            c.drawString(x_offset + sum(col_widths[:2]), y_offset, str(potongan[i][0]))
+            c.drawString(x_offset + sum(col_widths[:3]), y_offset, format_rupiah(potongan[i][1]))
             y_offset -= row_height
-
-        # Gambar garis tabel
-        table_left = 50
-        table_top = start_table_y
-        table_width = sum(col_widths)
-        table_height = row_height * (len(penghasilan) + 1)  # header + rows
-
-        # Garis horizontal
-        for i in range(len(penghasilan) + 2):  # +1 header + 1 bawah
-            y = table_top - i * row_height
-            c.line(table_left, y, table_left + table_width, y)
-
-        # Garis vertikal
-        x = table_left
-        for w in col_widths:
-            c.line(x, table_top, x, table_top - table_height)
-            x += w
 
         # Pembayaran
         y_offset -= 20
@@ -146,6 +131,7 @@ def create_pdf_reportlab(data, nama_file):
         signature_path = "signature.png"
         signature_rgb_path = "signature_rgb.png"
         convert_png_to_rgb(signature_path, signature_rgb_path)
+
         if os.path.exists(signature_rgb_path):
             c.drawImage(signature_rgb_path, 450, y_offset - 50, width=50, height=50)
         else:
@@ -164,3 +150,110 @@ def create_pdf_reportlab(data, nama_file):
     except Exception as e:
         log_exception(e, "Gagal membuat PDF slip gaji")
         raise
+
+def halaman_gaji():
+    st.title("💰 Slip Gaji")
+
+    if not st.session_state.get("logged_in", False):
+        st.warning("Silakan login terlebih dahulu.")
+        return
+
+    from database import get_all_karyawan, get_karyawan_by_id
+
+    try:
+        data_karyawan = get_all_karyawan()
+        if not data_karyawan:
+            st.info("Belum ada data karyawan.")
+            return
+
+        karyawan_dict = {row[1]: row[0] for row in data_karyawan}
+        nama_karyawan = st.selectbox("Pilih Nama Karyawan", options=karyawan_dict.keys())
+        data = get_karyawan_by_id(karyawan_dict[nama_karyawan])
+
+        if data:
+            _, nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening, alamat_bank = data
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.text_input("Nama", value=nama, key="g_nama")
+                st.text_input("Alamat", value=alamat, key="g_alamat")
+                st.text_input("No. Telp", value=no_telp, key="g_no_telp")
+                st.text_input("Divisi", value=divisi, key="g_divisi")
+                st.text_input("Jabatan", value=jabatan, key="g_jabatan")
+                st.text_input("Email", value=email, key="g_email")
+            with col2:
+                st.text_input("Nama Bank", value=nama_bank, key="g_nama_bank")
+                st.text_input("Rekening", value=rekening, key="g_rekening")
+                st.text_area("Alamat Bank", value=alamat_bank, key="g_alamat_bank", height=150)
+                periode = st.text_input("Periode", value="Januari 2025")
+
+            st.header("Penghasilan")
+            col_kiri, col_kanan = st.columns(2)
+            with col_kiri:
+                gaji_pokok = st.number_input("Gaji Pokok", min_value=0, value=2_000_000)
+                tunjangan_kinerja = st.number_input("Tunjangan Kinerja", min_value=0)
+                tunjangan_makan = st.number_input("Tunjangan Makan", min_value=0)
+                tunjangan_overtime = st.number_input("Tunjangan Overtime", min_value=0)
+                tunjangan_jabatan = st.number_input("Tunjangan Jabatan", min_value=0)
+            with col_kanan:
+                pph21 = st.number_input("PPh 21", min_value=0)
+                bpjs_kesehatan = st.number_input("BPJS Kesehatan", min_value=0)
+                bpjs_ketenagakerjaan = st.number_input("BPJS Ketenagakerjaan", min_value=0)
+                tagihan_hutang1 = st.number_input("Tagihan Hutang 1", min_value=0)
+                tagihan_hutang2 = st.number_input("Tagihan Hutang 2", min_value=0)
+
+            total_penghasilan = gaji_pokok + tunjangan_kinerja + tunjangan_makan + tunjangan_overtime + tunjangan_jabatan
+            total_potongan = pph21 + bpjs_kesehatan + bpjs_ketenagakerjaan + tagihan_hutang1 + tagihan_hutang2
+            pembayaran = total_penghasilan - total_potongan
+
+            if st.button("Cetak Slip Gaji"):
+                try:
+                    data = {
+                        "periode": periode,
+                        "data_pribadi": {
+                            "Nama": nama,
+                            "Alamat": alamat,
+                            "No. Telp": no_telp,
+                            "Divisi": divisi,
+                            "Jabatan": jabatan
+                        },
+                        "data_bank": {
+                            "Nama": nama_bank,
+                            "Bank": nama_bank,
+                            "Rekening": rekening,
+                            "Alamat": alamat_bank,
+                            "Email": email
+                        },
+                        "gaji_pokok": gaji_pokok,
+                        "tunjangan_kinerja": tunjangan_kinerja,
+                        "tunjangan_makan": tunjangan_makan,
+                        "tunjangan_overtime": tunjangan_overtime,
+                        "tunjangan_jabatan": tunjangan_jabatan,
+                        "total_penghasilan": total_penghasilan,
+                        "pph21": pph21,
+                        "bpjs_kesehatan": bpjs_kesehatan,
+                        "bpjs_ketenagakerjaan": bpjs_ketenagakerjaan,
+                        "tagihan_hutang1": tagihan_hutang1,
+                        "tagihan_hutang2": tagihan_hutang2,
+                        "total_potongan": total_potongan,
+                        "pembayaran": pembayaran
+                    }
+
+                    nama_sanitized = re.sub(r'[^a-zA-Z0-9_]', '_', nama)
+                    pdf_filename = f"slip_gaji_{nama_sanitized}.pdf"
+                    create_pdf_reportlab(data, pdf_filename)
+
+                    with open(pdf_filename, "rb") as f:
+                        st.download_button(
+                            label="⬇️ Download PDF",
+                            data=f.read(),
+                            file_name=pdf_filename,
+                            mime="application/pdf"
+                        )
+                except Exception as e:
+                    log_exception(e, "Gagal membuat dan mengunduh slip gaji")
+                    show_user_error("Gagal membuat slip gaji. Silakan periksa kembali data Anda.")
+
+    except Exception as e:
+        log_exception(e, "Kesalahan halaman_gaji")
+        show_user_error("Terjadi kesalahan saat memuat data. Silakan coba lagi.")
