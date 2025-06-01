@@ -1,6 +1,9 @@
+# database.py
 import sqlite3
+import os
+from firebase_config import storage, log_backup_event
 
-DB_NAME = "karyawan.db"
+DB_NAME = "/tmp/karyawan.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -58,6 +61,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 def login_user(username, password):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
@@ -65,6 +69,7 @@ def login_user(username, password):
     user = c.fetchone()
     conn.close()
     return user
+
 
 def get_all_karyawan():
     conn = sqlite3.connect(DB_NAME)
@@ -74,19 +79,21 @@ def get_all_karyawan():
     conn.close()
     return data
 
+
 def save_karyawan(data):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute('''
         INSERT INTO karyawan 
-        (id, nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (nama, alamat, no_telp, divisi, jabatan, email, nama_bank, rekening)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        data["id"], data["nama"], data["alamat"], data["no_telp"], data["divisi"],
+        data["nama"], data["alamat"], data["no_telp"], data["divisi"],
         data["jabatan"], data["email"], data["nama_bank"], data["rekening"]
     ))
     conn.commit()
     conn.close()
+
 
 def get_karyawan_by_id(karyawan_id):
     conn = sqlite3.connect(DB_NAME)
@@ -95,6 +102,7 @@ def get_karyawan_by_id(karyawan_id):
     data = c.fetchone()
     conn.close()
     return data
+
 
 def get_gaji_by_id(karyawan_id):
     conn = sqlite3.connect(DB_NAME)
@@ -108,6 +116,7 @@ def get_gaji_by_id(karyawan_id):
     data = c.fetchone()
     conn.close()
     return data
+
 
 def save_or_update_gaji(karyawan_id, data):
     conn = sqlite3.connect(DB_NAME)
@@ -142,3 +151,37 @@ def save_or_update_gaji(karyawan_id, data):
 
     conn.commit()
     conn.close()
+
+
+# === 🔥 Fitur Baru: Backup & Restore ke/dari Firebase ===
+
+def backup_database_to_firebase():
+    try:
+        remote_path = "backups/karyawan.db"
+        storage.child(remote_path).put(DB_NAME)
+        url = storage.child(remote_path).get_url(None)
+
+        log_backup_event("success", f"Backup berhasil. Link: {url}")
+        return True, url
+    except Exception as e:
+        log_backup_event("failed", str(e))
+        return False, str(e)
+
+
+def restore_database_from_firebase():
+    try:
+        local_backup = "/tmp/karyawan_backup.db"
+        remote_path = "backups/karyawan.db"
+
+        storage.child(remote_path).download(local_backup)
+
+        if os.path.exists(DB_NAME):
+            os.remove(DB_NAME)
+
+        os.rename(local_backup, DB_NAME)
+
+        log_backup_event("restore_success", "Database berhasil dipulihkan.")
+        return True, "Restore berhasil."
+    except Exception as e:
+        log_backup_event("restore_failed", str(e))
+        return False, str(e)
