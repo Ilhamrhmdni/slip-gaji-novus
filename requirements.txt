@@ -3,4 +3,4 @@ pandas
 num2words
 reportlab
 pillow
-pyrebase4==3.1.7
+pyrebase4
