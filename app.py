@@ -1,7 +1,7 @@
 import streamlit as st
 from auth import halaman_login, logout
 from gaji import halaman_gaji
-from karyawan import halaman_kelola_data  # Baru: Kelola Data Karyawan
+from karyawan import halaman_kelola_data
 
 # Cek apakah pengguna sudah login
 if "logged_in" not in st.session_state:
@@ -9,6 +9,8 @@ if "logged_in" not in st.session_state:
 
 # Jika belum login, tampilkan halaman login
 if not st.session_state.logged_in:
+    from database import init_db  # Load db supaya bisa panggil init_db
+    init_db()  # Inisialisasi database sebelum login
     halaman_login()
 else:
     # Jika sudah login, tampilkan menu utama
