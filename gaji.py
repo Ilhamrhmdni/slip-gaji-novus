@@ -8,11 +8,9 @@ def generate_slip_gaji_pdf(data):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
 
-    # Judul
     c.setFont("Helvetica-Bold", 14)
     c.drawCentredString(300, 800, "SLIP GAJI KARYAWAN")
 
-    # Header info
     c.setFont("Helvetica", 11)
     y = 780
     c.drawString(50, y, f"Periode : {data['periode']}")
@@ -36,7 +34,6 @@ def generate_slip_gaji_pdf(data):
     c.drawString(50, y, f"Rekening : {data['rekening']}")
     y -= 30
 
-    # Gaji dan potongan
     c.drawString(50, y, "PENGHASILAN")
     c.drawString(300, y, "POTONGAN")
     y -= 15
@@ -56,7 +53,6 @@ def generate_slip_gaji_pdf(data):
     c.drawString(300, y, f"Tagihan hutang {to_rupiah(data['hutang2'])}")
     y -= 20
 
-    # Total
     total_penghasilan = sum([data['gaji_pokok'], data['tunj_kin'], data['tunj_makan'], data['tunj_lembur'], data['tunj_jabatan']])
     total_potongan = sum([data['pph21'], data['bpjs_kes'], data['bpjs_kerja'], data['hutang1'], data['hutang2']])
     total_pembayaran = total_penghasilan - total_potongan
@@ -68,7 +64,6 @@ def generate_slip_gaji_pdf(data):
     y -= 15
     c.drawString(50, y, f"Terbilang : {terbilang(total_pembayaran).capitalize()} rupiah")
 
-    # TTD
     y -= 40
     c.drawString(50, y, "Mengetahui,")
     y -= 15
