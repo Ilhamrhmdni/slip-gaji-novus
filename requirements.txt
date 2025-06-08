@@ -1,6 +1,2 @@
 streamlit
-pandas
-num2words
 reportlab
-pillow
-pyrebase4
