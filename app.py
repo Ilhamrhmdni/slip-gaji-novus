@@ -1,27 +1,23 @@
 import streamlit as st
-from auth import halaman_login, logout
-from gaji import halaman_gaji
-from karyawan import halaman_kelola_data
+from auth import login
+from gaji import generate_slip
 
-# Cek apakah pengguna sudah login
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+def main():
+    st.title("Aplikasi Slip Gaji")
 
-# Jika belum login, tampilkan halaman login
-if not st.session_state.logged_in:
-    from database import init_db  # Load db supaya bisa panggil init_db
-    init_db()  # Inisialisasi database sebelum login
-    halaman_login()
-else:
-    # Jika sudah login, tampilkan menu utama
-    st.sidebar.title("Navigasi")
-    pilihan = st.sidebar.selectbox("Pilih Halaman", ["Slip Gaji", "Kelola Data", "Logout"])
+    if login():
+        st.success("Login berhasil!")
 
-    if pilihan == "Slip Gaji":
-        halaman_gaji()
-    elif pilihan == "Kelola Data":
-        halaman_kelola_data()
-    elif pilihan == "Logout":
-        logout()
+        nama = st.text_input("Nama Karyawan")
+        jabatan = st.text_input("Jabatan")
+        gaji_pokok = st.number_input("Gaji Pokok", min_value=0)
+        tunjangan = st.number_input("Tunjangan", min_value=0)
+        potongan = st.number_input("Potongan", min_value=0)
+
+        if st.button("Generate Slip Gaji"):
+            generate_slip(nama, jabatan, gaji_pokok, tunjangan, potongan)
     else:
-        st.write("Fitur lainnya akan ditambahkan...")
+        st.warning("Silakan login terlebih dahulu.")
+
+if __name__ == "__main__":
+    main()
